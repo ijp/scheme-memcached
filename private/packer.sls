@@ -16,9 +16,8 @@
     #'(begin
         (define packer
           (make-packer clause clauses ...))
-        ;; (define unpacker
-        ;;   (make-unpacker clause clauses ...))
-        )))
+        (define unpacker
+          (make-unpacker clause clauses ...)))))
 
 (define-syntax make-packer
   (lambda (stx)
@@ -50,4 +49,36 @@
        (syntax-violation 'make-bytevector-packer
                          "expects at least one packer clause"
                          stx)))))
+
+(define-syntax make-unpacker
+  (lambda (stx)
+    (define (clause-getter clause bv idx)
+      (syntax-case clause (u8 u16 u32 big)
+        ((id u8)
+         #`(bytevector-u8-ref #,bv #,idx))
+        ((id u16 big)
+         #`(bytevector-u16-ref #,bv #,idx (endianness big)))
+        ((id u32 big)
+         #`(bytevector-u32-ref #,bv #,idx (endianness big)))))
+
+    (syntax-case stx ()
+      ((make-unpacker clause clauses ...)
+        (let* ((clauses #'(clause clauses ...))
+               (vals (map clause-id clauses))
+               (total-size (sum (map clause-size clauses)))
+               (bv (car (generate-temporaries '(bv))))) ; necessary?
+         #`(lambda (#,bv)
+             (assert (= #,total-size (bytevector-length #,bv)))
+             (let (#,@(loop ((for clause (in-list clauses))
+                             (for val (in-list vals))
+                             (with idx 0 (+ idx (clause-size clause)))
+                             (for result
+                               (listing #`(#,val #,(clause-getter clause bv idx)))))
+                            => result))
+               (values #,@vals)))))
+      ((make-bytevector-packer . _)
+       (syntax-violation 'make-unpacker
+                         "expects at least one packer clause"
+                         stx)))))
+
 )
