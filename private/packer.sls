@@ -28,7 +28,9 @@
         ((id u16 big)
          #`(bytevector-u16-set! #,bv #,idx #,val (endianness big)))
         ((id u32 big)
-         #`(bytevector-u32-set! #,bv #,idx #,val (endianness big)))))
+         #`(bytevector-u32-set! #,bv #,idx #,val (endianness big)))
+        ((id u64 big)
+         #`(bytevector-u64-set! #,bv #,idx #,val (endianness big)))))
 
     (syntax-case stx ()
       ((make-bytevector-packer clause clauses ...)
@@ -59,7 +61,9 @@
         ((id u16 big)
          #`(bytevector-u16-ref #,bv #,idx (endianness big)))
         ((id u32 big)
-         #`(bytevector-u32-ref #,bv #,idx (endianness big)))))
+         #`(bytevector-u32-ref #,bv #,idx (endianness big)))
+        ((id u64 big)
+         #`(bytevector-u64-ref #,bv #,idx (endianness big)))))
 
     (syntax-case stx ()
       ((make-unpacker clause clauses ...)

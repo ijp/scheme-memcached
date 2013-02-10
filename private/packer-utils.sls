@@ -9,7 +9,8 @@
   (syntax-case clause (u8 u16 u32 big)
     ((id u8) 1)
     ((id u16 big) 2)
-    ((id u32 big) 4)))
+    ((id u32 big) 4)
+    ((id u64 big) 8)))
 
 ;; (define (clause-setter clause bv idx val)
 ;;   (syntax-case clause (u8 u16 u32 big)
