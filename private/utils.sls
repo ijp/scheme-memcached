@@ -1,6 +1,6 @@
 #!r6rs
 (library (memcached private utils)
-(export define-syntax-case alist->hashtable)
+(export define-syntax-case alist->hashtable define-syntax-rule)
 (import (rnrs))
 
 (define-syntax define-syntax-case
@@ -23,5 +23,13 @@
        (a->h alist (make-eqv-hashtable)))
       ((alist hash-function equiv)
        (a->h alist (make-hashtable hash-function equiv))))))
+
+(define-syntax define-syntax-rule
+  (syntax-rules ()
+    ((define-syntax-rule (template-name . template-args) replacement)
+     (define-syntax template-name
+       (syntax-rules ()
+         ((template-name . template-args)
+          replacement))))))
 
 )

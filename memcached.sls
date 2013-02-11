@@ -1,9 +1,13 @@
 #!r6rs
 (library (memcached memcached)
-(export memcached-get)
+(export memcached-get
+        memcached-set!
+        memcached-add!
+        memcached-replace!
+        )
 (import (rnrs)
         (memcached private packer)
-        (only (memcached private utils) alist->hashtable)
+        (memcached private utils)
         (memcached connection))
 
 (define magic/request #x80)
@@ -131,5 +135,36 @@
     (if (no-error? status)
         body
         (error 'memcached-get (response-message status) key))))
+
+(define (write-set out opcode key value expiration)
+  (define extras-len 8)
+  (define key-len (bytevector-length key))
+  (define value-len (bytevector-length value))
+  (define total-len (+ extras-len key-len value-len))
+  (define header
+    (mc-pack magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0))
+  (define extras (make-bytevector extras-len 0))
+  (bytevector-u16-set! extras 4 expiration (endianness big))
+  (write-packet out header extras key value))
+
+(define-syntax-rule (define-setter name opcode)
+  (define name
+    (let ((set (lambda (mc key value expiration)
+                 (let ((i (connection-input-port mc))
+                       (o (connection-output-port mc)))
+                   (write-set o opcode key value expiration)
+                   (let-values (((status cas extra key body) (get-packet i)))
+                     (if (no-error? status)
+                         body
+                         (error 'name (response-message status) key)))))))
+      (case-lambda
+        ((mc key value)
+         (set mc key value 0))
+        ((mc key value expiration)
+         (set mc key value expiration))))))
+
+(define-setter memcached-set! 'Set)
+(define-setter memcached-add! 'Add)
+(define-setter memcached-replace! 'Replace)
 
 )
