@@ -110,14 +110,14 @@
                       (get-bytevector-n port body-len))))
       (values status cas extra key body))))
 
-(define (write-get out key)
+(define (write-key-only out opcode key)
   (define key-len (bytevector-length key))
   (define extras-len 0)
   (define value-len 0)
   (define total-len (+ value-len key-len extras-len))
   (define header
     (mc-pack magic/request
-             (opcode-byte 'Get)
+             (opcode-byte opcode)
              key-len
              extras-len
              0 ; data type 
@@ -128,13 +128,17 @@
              ))
   (write-packet out header #f key #f))
 
-(define (memcached-get mc key)
-  (write-get (connection-output-port mc) key)
+(define-syntax-rule (define-command/key-only name opcode)
+  (define (name mc key)
+    (let ((i (connection-input-port mc))
+          (o (connection-output-port mc)))
+      (write-key-only o opcode key)
+      (let-values (((status cas extra key body) (get-packet i)))
+        (if (no-error? status)
+            body
+            (error 'name (response-message status) key))))))
 
-  (let-values (((status cas extra key body) (get-packet (connection-input-port mc))))
-    (if (no-error? status)
-        body
-        (error 'memcached-get (response-message status) key))))
+(define-command/key-only memcached-get 'Get)
 
 (define (write-set out opcode key value expiration)
   (define extras-len 8)
