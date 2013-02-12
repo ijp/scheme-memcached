@@ -5,6 +5,8 @@
         memcached-add!
         memcached-replace!
         memcached-delete!
+        memcached-prepend!
+        memcached-append!
         )
 (import (rnrs)
         (memcached private packer)
@@ -172,5 +174,27 @@
 (define-setter memcached-set! 'Set)
 (define-setter memcached-add! 'Add)
 (define-setter memcached-replace! 'Replace)
+
+(define (write-key+value out opcode key value)
+  (define extras-len 0)
+  (define key-len (bytevector-length key))
+  (define value-len (bytevector-length value))
+  (define total-len (+ extras-len key-len value-len))
+  (define header
+    (mc-pack magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0))
+  (write-packet out header #f key value))
+
+(define-syntax-rule (define-command/key+value name opcode)
+  (define (name mc key value)
+    (let ((i (connection-input-port mc))
+          (o (connection-output-port mc)))
+      (write-key+value o opcode key value)
+      (let-values (((status cas extra key body) (get-packet i)))
+        (if (no-error? status)
+            body
+            (error 'name (response-message status) key))))))
+
+(define-command/key+value memcached-append! 'Append)
+(define-command/key+value memcached-prepend! 'Prepend)
 
 )
