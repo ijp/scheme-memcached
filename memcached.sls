@@ -4,6 +4,7 @@
         memcached-set!
         memcached-add!
         memcached-replace!
+        memcached-delete!
         )
 (import (rnrs)
         (memcached private packer)
@@ -139,6 +140,7 @@
             (error 'name (response-message status) key))))))
 
 (define-command/key-only memcached-get 'Get)
+(define-command/key-only memcached-delete! 'Delete)
 
 (define (write-set out opcode key value expiration)
   (define extras-len 8)
