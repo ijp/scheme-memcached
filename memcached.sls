@@ -9,6 +9,8 @@
         memcached-append!
         memcached-version
         memcached-flush!
+        memcached-incr!
+        memcached-decr!
         )
 (import (rnrs)
         (memcached private packer)
@@ -221,5 +223,46 @@
 
 (define-command/no-args memcached-version 'Version utf8->string) ;?
 (define-command/no-args memcached-flush! 'Flush)
+
+(define (write-incr out opcode key expiration by initial)
+  (define extras-len 20)
+  (define key-len (bytevector-length key))
+  (define value-len 0)
+  (define total-len (+ extras-len key-len value-len))
+  (define header
+    (mc-pack magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0))
+  (define extras (make-bytevector extras-len 0))
+  (bytevector-u64-set! extras 0 by (endianness big))
+  (bytevector-u64-set! extras 8 initial (endianness big))
+  (bytevector-u16-set! extras 16 expiration (endianness big))
+  (write-packet out header extras key #f))
+
+(define no-initial #xffffffff)
+
+(define-syntax-rule (define-command/incr name opcode)
+  (define name
+    (let ((set (lambda (mc key expiration by initial)
+                 (let ((i (connection-input-port mc))
+                       (o (connection-output-port mc)))
+                   (write-incr o opcode key expiration by initial)
+                   (let-values (((status cas extra key body) (get-packet i)))
+                     (if (no-error? status)
+                         (bytevector-u64-ref body 0 (endianness big))
+                         (error 'name (response-message status) key)))))))
+      (case-lambda
+        ;; TODO: Not entirely convinced by the ordering. Might be more
+        ;; useful to have the "by" and "initial" arguments come before
+        ;; the expiration
+        ((mc key)
+         (set mc key 0 0 no-initial))
+        ((mc key expiration)
+         (set mc key expiration 0 no-initial))
+        ((mc key expiration by)
+         (set mc key expiration by no-initial))
+        ((mc key expiration by initial)
+         (set mc key expiration by initial))))))
+
+(define-command/incr memcached-incr! 'Increment)
+(define-command/incr memcached-decr! 'Decrement)
 
 )
