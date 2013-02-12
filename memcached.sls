@@ -7,6 +7,8 @@
         memcached-delete!
         memcached-prepend!
         memcached-append!
+        memcached-version
+        memcached-flush!
         )
 (import (rnrs)
         (memcached private packer)
@@ -196,5 +198,28 @@
 
 (define-command/key+value memcached-append! 'Append)
 (define-command/key+value memcached-prepend! 'Prepend)
+
+(define (write-no-args out opcode)
+  (define header
+    (mc-pack magic/request (opcode-byte opcode) 0 0 0 0 0 0 0))
+  (write-packet out header #f #f #f))
+
+(define-syntax define-command/no-args
+  (syntax-rules ()
+    ((define-command/no-args name opcode)
+     (define-command/no-args name opcode (lambda (x) x)))
+    ((define-command/no-args name opcode f)
+     (define (name mc)
+       (let ((i (connection-input-port mc))
+             (o (connection-output-port mc)))
+         (write-no-args o opcode)
+         (let-values (((status cas extra key body) (get-packet i)))
+           (if (no-error? status)
+               (f body)
+               (error 'name (response-message status) key))))))))
+
+
+(define-command/no-args memcached-version 'Version utf8->string) ;?
+(define-command/no-args memcached-flush! 'Flush)
 
 )
