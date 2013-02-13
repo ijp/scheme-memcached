@@ -5,6 +5,7 @@
         get-u64
         )
 (import (rnrs base)
+        (rnrs bytevectors)
         (rnrs io ports))
 
 (define (get-u16 port endianness)
