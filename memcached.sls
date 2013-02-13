@@ -90,8 +90,7 @@
    (opaque u32 big)
    (cas u64 big))
 
-(define (write-packet out header extras key value)
-  (put-bytevector out header)
+(define (write-packet-body out extras key value)
   (when extras
     (put-bytevector out extras))
   (when key
@@ -103,8 +102,7 @@
 (define (get-packet port)
   (let-values (((magic opcode key-len extras-len data-type
                  status total-body-len opaque cas)
-                ;; TODO: fix magic value
-                (mc-unpack (get-bytevector-n port 24))))
+                (mc-unpack port)))
     (let* ((extra (if (zero? extras-len)
                       #f
                       (get-bytevector-n port extras-len)))
@@ -122,18 +120,18 @@
   (define extras-len 0)
   (define value-len 0)
   (define total-len (+ value-len key-len extras-len))
-  (define header
-    (mc-pack magic/request
-             (opcode-byte opcode)
-             key-len
-             extras-len
-             0 ; data type 
-             0 ; reserved
-             total-len
-             0 ; opaque
-             0 ; CAS
-             ))
-  (write-packet out header #f key #f))
+  (mc-pack out
+           magic/request
+           (opcode-byte opcode)
+           key-len
+           extras-len
+           0 ; data type 
+           0 ; reserved
+           total-len
+           0 ; opaque
+           0 ; CAS
+           )
+  (write-packet-body out #f key #f))
 
 (define-syntax-rule (define-command/key-only name opcode)
   (define (name mc key)
@@ -153,11 +151,10 @@
   (define key-len (bytevector-length key))
   (define value-len (bytevector-length value))
   (define total-len (+ extras-len key-len value-len))
-  (define header
-    (mc-pack magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0))
   (define extras (make-bytevector extras-len 0))
   (bytevector-u16-set! extras 4 expiration (endianness big))
-  (write-packet out header extras key value))
+  (mc-pack out magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0)
+  (write-packet-body out extras key value))
 
 (define-syntax-rule (define-setter name opcode)
   (define name
@@ -184,9 +181,8 @@
   (define key-len (bytevector-length key))
   (define value-len (bytevector-length value))
   (define total-len (+ extras-len key-len value-len))
-  (define header
-    (mc-pack magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0))
-  (write-packet out header #f key value))
+  (mc-pack out magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0)
+  (write-packet-body out #f key value))
 
 (define-syntax-rule (define-command/key+value name opcode)
   (define (name mc key value)
@@ -202,9 +198,8 @@
 (define-command/key+value memcached-prepend! 'Prepend)
 
 (define (write-no-args out opcode)
-  (define header
-    (mc-pack magic/request (opcode-byte opcode) 0 0 0 0 0 0 0))
-  (write-packet out header #f #f #f))
+  (mc-pack out magic/request (opcode-byte opcode) 0 0 0 0 0 0 0)
+  (write-packet-body out #f #f #f))
 
 (define-syntax define-command/no-args
   (syntax-rules ()
@@ -229,13 +224,12 @@
   (define key-len (bytevector-length key))
   (define value-len 0)
   (define total-len (+ extras-len key-len value-len))
-  (define header
-    (mc-pack magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0))
   (define extras (make-bytevector extras-len 0))
   (bytevector-u64-set! extras 0 by (endianness big))
   (bytevector-u64-set! extras 8 initial (endianness big))
   (bytevector-u16-set! extras 16 expiration (endianness big))
-  (write-packet out header extras key #f))
+  (mc-pack out magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0)
+  (write-packet-body out extras key #f))
 
 (define no-initial #xffffffff)
 

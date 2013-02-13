@@ -38,7 +38,7 @@
                (args (map clause-id clauses))
                (total-size (sum (map clause-size clauses)))
                (bv (car (generate-temporaries '(bv))))) ; necessary?
-         #`(lambda #,args
+         #`(lambda (port #,@args)
              (let ((#,bv (make-bytevector #,total-size)))
                #,@(loop ((for clause (in-list clauses))
                          (for arg (in-list args))
@@ -46,7 +46,7 @@
                          (for result
                            (listing (clause-setter clause bv idx arg))))
                         => result)
-               #,bv))))
+               (put-bytevector port #,bv)))))
       ((make-bytevector-packer . _)
        (syntax-violation 'make-bytevector-packer
                          "expects at least one packer clause"
@@ -71,7 +71,8 @@
                (vals (map clause-id clauses))
                (total-size (sum (map clause-size clauses)))
                (bv (car (generate-temporaries '(bv))))) ; necessary?
-         #`(lambda (#,bv)
+         #`(lambda (port)
+             (define #,bv (get-bytevector-n port #,total-size))
              (assert (= #,total-size (bytevector-length #,bv)))
              (let (#,@(loop ((for clause (in-list clauses))
                              (for val (in-list vals))
