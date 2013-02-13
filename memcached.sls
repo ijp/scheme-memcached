@@ -248,9 +248,9 @@
         ;; useful to have the "by" and "initial" arguments come before
         ;; the expiration
         ((mc key)
-         (set mc key 0 0 no-initial))
+         (set mc key 0 1 no-initial))
         ((mc key expiration)
-         (set mc key expiration 0 no-initial))
+         (set mc key expiration 1 no-initial))
         ((mc key expiration by)
          (set mc key expiration by no-initial))
         ((mc key expiration by initial)
