@@ -51,33 +51,32 @@
 
 (define-syntax make-unpacker
   (lambda (stx)
-    (define (clause-getter clause bv idx)
+    (define (clause-reader clause port)
       (syntax-case clause (u8 u16 u32 big)
         ((id u8)
-         #`(bytevector-u8-ref #,bv #,idx))
+         #`(get-u8 #,port))
         ((id u16 big)
-         #`(bytevector-u16-ref #,bv #,idx (endianness big)))
+         #`(get-u16 #,port (endianness big)))
         ((id u32 big)
-         #`(bytevector-u32-ref #,bv #,idx (endianness big)))
+         #`(get-u32 #,port (endianness big)))
         ((id u64 big)
-         #`(bytevector-u64-ref #,bv #,idx (endianness big)))))
+         #`(get-u64 #,port (endianness big)))))
 
     (syntax-case stx ()
       ((make-unpacker clause clauses ...)
         (let* ((clauses #'(clause clauses ...))
                (vals (map clause-id clauses))
-               (total-size (sum (map clause-size clauses)))
-               (bv (car (generate-temporaries '(bv))))) ; necessary?
-         #`(lambda (port)
-             (define #,bv (get-bytevector-n port #,total-size))
-             (assert (= #,total-size (bytevector-length #,bv)))
-             (let (#,@(loop ((for clause (in-list clauses))
-                             (for val (in-list vals))
-                             (with idx 0 (+ idx (clause-size clause)))
-                             (for result
-                               (listing #`(#,val #,(clause-getter clause bv idx)))))
-                            => result))
-               (values #,@vals)))))
+               (port (car (generate-temporaries '(port))))) ; necessary?
+         #`(lambda (#,port)
+             (let* (#,@(loop ((for clause (in-list clauses))
+                              (for val (in-list vals))
+                              (for result
+                                (listing #`(#,val #,(clause-reader clause port)))))
+                             => result))
+               (cond ((memp eof-object? (list #,@vals)) =>
+                      (lambda (rest)
+                        (error 'make-unpacker "eof early" rest)))
+                     (else (values #,@vals)))))))
       ((make-bytevector-packer . _)
        (syntax-violation 'make-unpacker
                          "expects at least one packer clause"
