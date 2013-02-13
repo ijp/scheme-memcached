@@ -6,6 +6,7 @@
 (import (rnrs)
         (for (only (ijputils common) sum) expand)
         (for (memcached private packer-utils) expand)
+        (for (memcached private packer-io) expand)
         (memcached private utils)
         (for (wak foof-loop) expand))
 
@@ -21,32 +22,28 @@
 
 (define-syntax make-packer
   (lambda (stx)
-    (define (clause-setter clause bv idx val)
+    (define (clause-writer clause port arg)
       (syntax-case clause (u8 u16 u32 big)
         ((id u8)
-         #`(bytevector-u8-set! #,bv #,idx #,val))
+         #`(put-u8 #,port #,arg))
         ((id u16 big)
-         #`(bytevector-u16-set! #,bv #,idx #,val (endianness big)))
+         #`(put-u16 #,port #,arg (endianness big)))
         ((id u32 big)
-         #`(bytevector-u32-set! #,bv #,idx #,val (endianness big)))
+         #`(put-u32 #,port #,arg (endianness big)))
         ((id u64 big)
-         #`(bytevector-u64-set! #,bv #,idx #,val (endianness big)))))
+         #`(put-u64 #,port #,arg (endianness big)))))
 
     (syntax-case stx ()
       ((make-bytevector-packer clause clauses ...)
         (let* ((clauses #'(clause clauses ...))
                (args (map clause-id clauses))
-               (total-size (sum (map clause-size clauses)))
-               (bv (car (generate-temporaries '(bv))))) ; necessary?
-         #`(lambda (port #,@args)
-             (let ((#,bv (make-bytevector #,total-size)))
-               #,@(loop ((for clause (in-list clauses))
-                         (for arg (in-list args))
-                         (with idx 0 (+ idx (clause-size clause)))
-                         (for result
-                           (listing (clause-setter clause bv idx arg))))
-                        => result)
-               (put-bytevector port #,bv)))))
+               (port (car (generate-temporaries '(port))))) ; necessary?
+         #`(lambda (#,port #,@args)
+             #,@(loop ((for clause (in-list clauses))
+                       (for arg (in-list args))
+                       (for result
+                         (listing (clause-writer clause port arg))))
+                      => result))))
       ((make-bytevector-packer . _)
        (syntax-violation 'make-bytevector-packer
                          "expects at least one packer clause"
