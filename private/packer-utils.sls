@@ -12,15 +12,6 @@
     ((id u32 big) 4)
     ((id u64 big) 8)))
 
-;; (define (clause-setter clause bv idx val)
-;;   (syntax-case clause (u8 u16 u32 big)
-;;     ((id u8)
-;;      #`(bytevector-u8-set! #,bv #,idx #,val))
-;;     ((id u16 big)
-;;      #`(bytevector-u16-set! #,bv #,idx #,val big))
-;;     ((id u32 big)
-;;      #`(bytevector-u32-set! #,bv #,idx #,val big))))
-
 (define (clause-id clause)
   (syntax-case clause ()
     ((id . _) #'id)))

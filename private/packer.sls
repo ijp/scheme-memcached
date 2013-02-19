@@ -6,6 +6,7 @@
 (import (rnrs)
         (for (only (ijputils common) sum) expand)
         (for (memcached private packer-utils) expand)
+        (for (memcached private packer-io) expand)
         (memcached private utils)
         (for (wak foof-loop) expand))
 
@@ -21,32 +22,28 @@
 
 (define-syntax make-packer
   (lambda (stx)
-    (define (clause-setter clause bv idx val)
+    (define (clause-writer clause port arg)
       (syntax-case clause (u8 u16 u32 big)
         ((id u8)
-         #`(bytevector-u8-set! #,bv #,idx #,val))
+         #`(put-u8 #,port #,arg))
         ((id u16 big)
-         #`(bytevector-u16-set! #,bv #,idx #,val (endianness big)))
+         #`(put-u16 #,port #,arg (endianness big)))
         ((id u32 big)
-         #`(bytevector-u32-set! #,bv #,idx #,val (endianness big)))
+         #`(put-u32 #,port #,arg (endianness big)))
         ((id u64 big)
-         #`(bytevector-u64-set! #,bv #,idx #,val (endianness big)))))
+         #`(put-u64 #,port #,arg (endianness big)))))
 
     (syntax-case stx ()
       ((make-bytevector-packer clause clauses ...)
         (let* ((clauses #'(clause clauses ...))
                (args (map clause-id clauses))
-               (total-size (sum (map clause-size clauses)))
-               (bv (car (generate-temporaries '(bv))))) ; necessary?
-         #`(lambda #,args
-             (let ((#,bv (make-bytevector #,total-size)))
-               #,@(loop ((for clause (in-list clauses))
-                         (for arg (in-list args))
-                         (with idx 0 (+ idx (clause-size clause)))
-                         (for result
-                           (listing (clause-setter clause bv idx arg))))
-                        => result)
-               #,bv))))
+               (port (car (generate-temporaries '(port))))) ; necessary?
+         #`(lambda (#,port #,@args)
+             #,@(loop ((for clause (in-list clauses))
+                       (for arg (in-list args))
+                       (for result
+                         (listing (clause-writer clause port arg))))
+                      => result))))
       ((make-bytevector-packer . _)
        (syntax-violation 'make-bytevector-packer
                          "expects at least one packer clause"
@@ -54,32 +51,32 @@
 
 (define-syntax make-unpacker
   (lambda (stx)
-    (define (clause-getter clause bv idx)
+    (define (clause-reader clause port)
       (syntax-case clause (u8 u16 u32 big)
         ((id u8)
-         #`(bytevector-u8-ref #,bv #,idx))
+         #`(get-u8 #,port))
         ((id u16 big)
-         #`(bytevector-u16-ref #,bv #,idx (endianness big)))
+         #`(get-u16 #,port (endianness big)))
         ((id u32 big)
-         #`(bytevector-u32-ref #,bv #,idx (endianness big)))
+         #`(get-u32 #,port (endianness big)))
         ((id u64 big)
-         #`(bytevector-u64-ref #,bv #,idx (endianness big)))))
+         #`(get-u64 #,port (endianness big)))))
 
     (syntax-case stx ()
       ((make-unpacker clause clauses ...)
         (let* ((clauses #'(clause clauses ...))
                (vals (map clause-id clauses))
-               (total-size (sum (map clause-size clauses)))
-               (bv (car (generate-temporaries '(bv))))) ; necessary?
-         #`(lambda (#,bv)
-             (assert (= #,total-size (bytevector-length #,bv)))
-             (let (#,@(loop ((for clause (in-list clauses))
-                             (for val (in-list vals))
-                             (with idx 0 (+ idx (clause-size clause)))
-                             (for result
-                               (listing #`(#,val #,(clause-getter clause bv idx)))))
-                            => result))
-               (values #,@vals)))))
+               (port (car (generate-temporaries '(port))))) ; necessary?
+         #`(lambda (#,port)
+             (let* (#,@(loop ((for clause (in-list clauses))
+                              (for val (in-list vals))
+                              (for result
+                                (listing #`(#,val #,(clause-reader clause port)))))
+                             => result))
+               (cond ((memp eof-object? (list #,@vals)) =>
+                      (lambda (rest)
+                        (error 'make-unpacker "eof early" rest)))
+                     (else (values #,@vals)))))))
       ((make-bytevector-packer . _)
        (syntax-violation 'make-unpacker
                          "expects at least one packer clause"
