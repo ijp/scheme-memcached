@@ -34,6 +34,9 @@
 (define (no-error? byte)
   (= byte #x00))
 
+(define (key-not-found? byte)
+  (= byte #x01))
+
 (define response-message
   (let ((h (alist->hashtable response-alist)))
     (lambda (key)
@@ -133,18 +136,28 @@
            )
   (write-packet-body out #f key #f))
 
-(define-syntax-rule (define-command/key-only name opcode)
+(define-syntax-rule (define-command/key-only name opcode result-proc)
   (define (name mc key)
     (let ((i (connection-input-port mc))
           (o (connection-output-port mc)))
       (write-key-only o opcode key)
-      (let-values (((status cas extra key body) (get-packet i)))
-        (if (no-error? status)
-            body
-            (error 'name (response-message status) key))))))
+      (call-with-values
+          (lambda ()
+            (get-packet i))
+        result-proc))))
 
-(define-command/key-only memcached-get 'Get)
-(define-command/key-only memcached-delete! 'Delete)
+(define-command/key-only memcached-get 'Get
+  (lambda (status cas extra key body)
+    (cond ((no-error? status) body)
+          ((key-not-found? status) #f)
+          (else
+           (error 'memcached-get (response-message status) key)))))
+
+(define-command/key-only memcached-delete! 'Delete
+  (lambda (status cas extra key body)
+    (if (or (no-error? status) (key-not-found? status))
+        #t
+        (error 'memcached-delete! (response-message status key)))))
 
 (define (write-set out opcode key value expiration)
   (define extras-len 8)

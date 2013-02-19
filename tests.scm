@@ -19,6 +19,9 @@
 (define-syntax-rule (test-not-error form)
   (test-eqv #t (guard (exn (else #f)) form #t)))
 
+(define-syntax-rule (test-not form)
+  (test-eqv #f form))
+
 (define (setup!)
     (memcached-set! (current-connection) (s "foo") (s "bar"))
     (memcached-set! (current-connection) (s "baz") (s "quux"))
@@ -40,7 +43,7 @@
   (test-equal (s "bar") (memcached-get (current-connection) (s "foo")))
   (test-equal (s "quux") (memcached-get (current-connection) (s "baz")))
   (test-equal (s "frotz") (memcached-get (current-connection) (s "zot")))
-  (test-error error? (memcached-get (current-connection) (s "notexists"))))
+  (test-not (memcached-get (current-connection) (s "notexists"))))
 
 
 (define-test-case* memcached-tests mc:set!
@@ -63,8 +66,8 @@
 (define-test-case* memcached-tests mc:delete!
   (test-not-error (memcached-get (current-connection) (s "foo")))
   (test-not-error (memcached-delete! (current-connection) (s "foo")))
-  (test-error error? (memcached-get (current-connection) (s "foo")))
-  (test-error error? (memcached-delete! (current-connection) (s "notexists"))))
+  (test-not (memcached-get (current-connection) (s "foo")))
+  (test-not-error (memcached-delete! (current-connection) (s "notexists"))))
 
 (define-test-case* memcached-tests mc:prepend/append!
   (test-error error? (memcached-prepend! (current-connection) (s "notexists") (s "prefix:")))
@@ -76,9 +79,9 @@
 
 (define-test-case* memcached-tests mc:flush!
   (test-not-error (memcached-flush! (current-connection)))
-  (test-error error? (memcached-get (current-connection) (s "foo")))
-  (test-error error? (memcached-get (current-connection) (s "baz")))
-  (test-error error? (memcached-get (current-connection) (s "zot"))))
+  (test-not (memcached-get (current-connection) (s "foo")))
+  (test-not (memcached-get (current-connection) (s "baz")))
+  (test-not (memcached-get (current-connection) (s "zot"))))
 
 (define-test-case* memcached-tests mc:version
   (test-predicate string? (memcached-version (current-connection))))
