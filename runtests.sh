@@ -7,5 +7,5 @@
 
 TMPFILE=$(mktemp /tmp/memcached.pid.XXXXXX)
 memcached -d -P $TMPFILE
-guile -L .. -x .sls tests.scm
+guile -L . -x .sls tests.scm
 kill $(cat $TMPFILE)

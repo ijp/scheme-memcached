@@ -1,2 +1,3 @@
 compiled/*
-private/compiled/*
+memcached/compiled/*
+memcached/private/compiled/*
