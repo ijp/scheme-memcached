@@ -1,8 +1,7 @@
 #!r6rs
 (import (rnrs)
         (wak trc-testing)
-        (memcached connection)
-        (memcached memcached)
+        (memcached)
         (srfi :39 parameters)
         (only (memcached private utils) define-syntax-rule))
 
