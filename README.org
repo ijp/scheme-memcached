@@ -1,0 +1,28 @@
+* An R6RS Memcached Client
+
+** What is it?
+
+A R6RS Scheme library for dealing with the Memcached caching
+daemon. Currently it only supports Guile, more will be added shortly.
+
+Right now, the library is a little simplistic. It only supports
+communicating with a single Memcached instance, and expects you to
+deal with bytevectors.
+
+**  API
+
+Users are expected to import the (memcached) library.
+
+*** make-memcached-connection
+*** connection-close
+*** memcached-get
+*** memcached-set!
+*** memcached-add!
+*** memcached-replace!
+*** memcached-delete!
+*** memcached-prepend!
+*** memcached-append!
+*** memcached-version
+*** memcached-flush!
+*** memcached-incr!
+*** memcached-decr!
