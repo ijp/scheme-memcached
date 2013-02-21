@@ -6,7 +6,7 @@
 ;;
 ;; You should have received a copy of the BSD license along with this
 ;; program. If not, see <http://www.debian.org/misc/bsd.license>.
-(library (memcached memcached)
+(library (memcached commands)
 (export memcached-get
         memcached-set!
         memcached-add!

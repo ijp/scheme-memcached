@@ -21,6 +21,6 @@
         memcached-incr!
         memcached-decr!
         )
-(import (memcached memcached)
+(import (memcached commands)
         (memcached connection))
 )
