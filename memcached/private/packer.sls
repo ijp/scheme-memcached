@@ -17,7 +17,7 @@
         (for (memcached private packer-utils) expand)
         (for (memcached private packer-io) expand)
         (memcached private utils)
-        (for (wak foof-loop) expand))
+        (for (rnrs lists) expand))
 
 (define-syntax-case
   ((define-packer/unpacker (packer unpacker) clause clauses ...) stx)
@@ -48,11 +48,11 @@
                (args (map clause-id clauses))
                (port (car (generate-temporaries '(port))))) ; necessary?
          #`(lambda (#,port #,@args)
-             #,@(loop ((for clause (in-list clauses))
-                       (for arg (in-list args))
-                       (for result
-                         (listing (clause-writer clause port arg))))
-                      => result))))
+             #,@(fold-right (lambda (clause arg rest)
+                              (cons (clause-writer clause port arg) rest))
+                            '()
+                            clauses
+                            args))))
       ((make-bytevector-packer . _)
        (syntax-violation 'make-bytevector-packer
                          "expects at least one packer clause"
@@ -77,11 +77,11 @@
                (vals (map clause-id clauses))
                (port (car (generate-temporaries '(port))))) ; necessary?
          #`(lambda (#,port)
-             (let* (#,@(loop ((for clause (in-list clauses))
-                              (for val (in-list vals))
-                              (for result
-                                (listing #`(#,val #,(clause-reader clause port)))))
-                             => result))
+             (let* (#,@(fold-right (lambda (clause val rest)
+                              (cons #`(#,val #,(clause-reader clause port)) rest))
+                            '()
+                            clauses
+                            vals))
                (cond ((memp eof-object? (list #,@vals)) =>
                       (lambda (rest)
                         (error 'make-unpacker "eof early" rest)))
