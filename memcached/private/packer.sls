@@ -13,7 +13,6 @@
 (library (memcached private packer)
 (export define-packer/unpacker)
 (import (rnrs)
-        (for (only (ijputils common) sum) expand)
         (for (memcached private packer-utils) expand)
         (for (memcached private packer-io) expand)
         (memcached private utils)
