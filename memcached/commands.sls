@@ -44,6 +44,9 @@
 (define (key-not-found? byte)
   (= byte #x01))
 
+(define (key-exists? byte)
+  (= byte #x02))
+
 (define response-message
   (let ((h (alist->hashtable response-alist)))
     (lambda (key)
@@ -176,25 +179,41 @@
   (mc-pack out magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0)
   (write-packet-body out extras key value))
 
-(define-syntax-rule (define-setter name opcode)
+(define-syntax-rule (define-setter name opcode result-proc)
   (define name
     (let ((set (lambda (mc key value expiration)
                  (let ((i (connection-input-port mc))
                        (o (connection-output-port mc)))
                    (write-set o opcode key value expiration)
-                   (let-values (((status cas extra key body) (get-packet i)))
-                     (if (no-error? status)
-                         body
-                         (error 'name (response-message status) key)))))))
+                   (call-with-values
+                       (lambda ()
+                         (get-packet i))
+                     result-proc)))))
       (case-lambda
         ((mc key value)
          (set mc key value 0))
         ((mc key value expiration)
          (set mc key value expiration))))))
 
-(define-setter memcached-set! 'Set)
-(define-setter memcached-add! 'Add)
-(define-setter memcached-replace! 'Replace)
+(define-setter memcached-set! 'Set
+  (lambda (status case extra key body)
+    (if (no-error? status)
+        #t
+        (error 'memcached-set! (response-message status) key))))
+
+(define-setter memcached-add! 'Add
+  (lambda (status case extra key body)
+    (cond ((no-error? status) #t)
+          ((key-exists? status) #f)
+          (else 
+           (error 'memcached-add! (response-message status) key)))))
+
+(define-setter memcached-replace! 'Replace
+  (lambda (status case extra key body)
+    (cond ((no-error? status) #t)
+          ((key-not-found? status) #f)
+          (else 
+           (error 'memcached-replace! (response-message status) key)))))
 
 (define (write-key+value out opcode key value)
   (define extras-len 0)

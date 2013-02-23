@@ -60,14 +60,14 @@
   (test-equal (s "asdf") (memcached-get (current-connection) (s "xyzzy"))))
 
 (define-test-case* memcached-tests mc:add!
-  (test-error error? (memcached-add! (current-connection) (s "foo") (s "newfoo")))
+  (test-not (memcached-add! (current-connection) (s "foo") (s "newfoo")))
   (test-not-error (memcached-add! (current-connection) (s "notexists") (s "new")))
   (test-equal (s "new") (memcached-get (current-connection) (s "notexists"))))
 
 (define-test-case* memcached-tests mc:replace!
   (test-not-error (memcached-replace! (current-connection) (s "foo") (s "newfoo")))
   (test-equal (s "newfoo") (memcached-get (current-connection) (s "foo")))
-  (test-error error? (memcached-replace! (current-connection) (s "xyzzy") (s "foo"))))
+  (test-not (memcached-replace! (current-connection) (s "xyzzy") (s "foo"))))
 
 (define-test-case* memcached-tests mc:delete!
   (test-not-error (memcached-get (current-connection) (s "foo")))
