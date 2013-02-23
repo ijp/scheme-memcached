@@ -76,8 +76,8 @@
   (test-not-error (memcached-delete! (current-connection) (s "notexists"))))
 
 (define-test-case* memcached-tests mc:prepend/append!
-  (test-error error? (memcached-prepend! (current-connection) (s "notexists") (s "prefix:")))
-  (test-error error? (memcached-append! (current-connection) (s "notexists") (s ":suffix")))
+  (test-not (memcached-prepend! (current-connection) (s "notexists") (s "prefix:")))
+  (test-not (memcached-append! (current-connection) (s "notexists") (s ":suffix")))
   (test-not-error (memcached-append! (current-connection) (s "foo") (s ":suffix")))
   (test-equal (s "bar:suffix") (memcached-get (current-connection) (s "foo")))
   (test-not-error (memcached-prepend! (current-connection) (s "baz") (s "prefix:")))

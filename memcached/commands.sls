@@ -47,6 +47,9 @@
 (define (key-exists? byte)
   (= byte #x02))
 
+(define (item-not-stored? byte)
+  (= byte #x05))
+
 (define response-message
   (let ((h (alist->hashtable response-alist)))
     (lambda (key)
@@ -229,9 +232,10 @@
           (o (connection-output-port mc)))
       (write-key+value o opcode key value)
       (let-values (((status cas extra key body) (get-packet i)))
-        (if (no-error? status)
-            body
-            (error 'name (response-message status) key))))))
+        (cond ((no-error? status) #t)
+              ((item-not-stored? status) #f)
+              (else 
+               (error 'name (response-message status) key)))))))
 
 (define-command/key+value memcached-append! 'Append)
 (define-command/key+value memcached-prepend! 'Prepend)
@@ -243,7 +247,7 @@
 (define-syntax define-command/no-args
   (syntax-rules ()
     ((define-command/no-args name opcode)
-     (define-command/no-args name opcode (lambda (x) x)))
+     (define-command/no-args name opcode (lambda (x) #t)))
     ((define-command/no-args name opcode f)
      (define (name mc)
        (let ((i (connection-input-port mc))
