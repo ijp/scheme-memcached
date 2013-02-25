@@ -1,0 +1,55 @@
+* DONE pack to/from ports
+  CLOSED: [2013-02-13 水 22:01]
+* DONE add memcached-delete!
+  CLOSED: [2013-02-12 火 16:46]
+* DONE add memcached-incr!/memcached-decr!
+  CLOSED: [2013-02-12 火 18:04]
+* DONE add memcached-append!/memcached-prepend!
+  CLOSED: [2013-02-12 火 16:55]
+* TODO handle CAS values
+* DONE add flush/version
+  CLOSED: [2013-02-12 火 17:07]
+* TODO memcached connection pools
+* TODO nicer guile library using keywords & guile exceptions
+In progress
+* TODO write a macro for handling optional arguments (spells?)
+incr needs a rearrangement, so that by comes after start?
+* TODO bring in spells for networking
+(need to package and stick in hall first :/)
+* TODO (memcached client)?
+A prettier version that doesn't require you to handle odd integers for
+expirations, let's you use strings instead of bytevectors (with choice
+of encoding (utf8 default)
+
+Not just strings, but generic serialisation, deserialisation
+
+Should I handle "Sha"ing the keys for people? (related to connection pools?)
+
+conveniences for auto caching, and invalidation
+* DONE write a test suite
+  CLOSED: [2013-02-19 火 15:59]
+* DONE delete should not error on non-existent keys
+  CLOSED: [2013-02-19 火 21:07]
+* DONE get should return #f if not exists
+  CLOSED: [2013-02-19 火 21:07]
+* TODO Add tests for incr!/decr!
+* TODO explain expiration times
+expiration time - 0 = never delete (1-2592000 seconds to keep, 259200
+equals unix time)
+^^ this still the case?
+* TODO other socket types
+UDP?
+Unix Sockets?
+I don't know what spells supports, but it might be an idea to add it there.
+* DONE when should I error?
+  CLOSED: [2013-02-23 土 21:22]
+Probably never a good idea to error for missing cache stuff.
+Other libraries like python's memcache.py work this way.
+
+Should raise &assertion violations for bad arguments, since this is
+the way all r6rs procedures work
+* TODO sort out incr! decr!
+* DONE add licensing information
+  CLOSED: [2013-02-21 木 22:29]
+* TODO add a multi-get
+can be implemented more efficiently than a loop of memcached-get
