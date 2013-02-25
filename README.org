@@ -7,7 +7,7 @@ daemon. Currently it only supports Guile, more will be added shortly.
 
 Right now, the library is a little simplistic. It only supports
 communicating with a single Memcached instance, and expects you to
-deal with bytevectors.
+deal with bytevectors. It also does not currently support CAS values.
 
 **  API
 
