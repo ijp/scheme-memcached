@@ -14,15 +14,64 @@ deal with bytevectors.
 Users are expected to import the (memcached) library.
 
 *** make-memcached-connection
+**** string integer -> connection
+Takes a host string, and a port number, and returns a new connection
+to that server.
+
+**** () -> connection
+Same as above, but defaults to localhost, port 11211.
+
 *** connection-close
+**** connection -> void
+Closes the connection to the server
+
 *** memcached-get
-*** memcached-set!
-*** memcached-add!
-*** memcached-replace!
+**** connection bytevector -> bytevector or #f
+Takes a memcached connection, and a key bytevector, and returns the
+bytevector value stored in memcached with that key. If there is no
+value with that key, #f is returned.
+
+*** memcached-set! / memcached-add! / memcached-replace!
+**** connection bytevector bytevector integer -> boolean
+Takes a memcached connection, a key bytevector, a value bytevector,
+and an expiration time, and updates the value stored at that key to
+the argument value. Returns #t if it updates the value, #f if it does
+not.
+
+The differences between the three are:
+- memcached-set! always updates the value
+- memcached-add! will only update the value if there is not one
+  already stored at that key
+- memcached-replace! will only updated the value if there is one
+  already stored at that key
+
+**** connection bytevector bytevector -> boolean
+Similar to above, but there is no expiration date for the key-value
+pair.
+
 *** memcached-delete!
-*** memcached-prepend!
-*** memcached-append!
+**** connection bytevector -> boolean
+Takes a memcached connection, and a key bytevector, and removes the
+value stored at memcached with that key. If there is no value
+associated with that key in memcached, it does nothing. Returns #t.
+
+*** memcached-prepend! / memcached-append!
+**** connection bytevector bytevector -> boolean
+Takes a memcached connection, a key bytevector, and a value
+bytevector, and either prepends or appends the value argument to the
+value stored in memcached at that key. Returns #t if successful, or #f
+if there is no value in memcached at that key.
+
 *** memcached-version
+**** connection -> string
+Takes a memcached connection, and returns a string specifying the
+version of the memcached server.
+
 *** memcached-flush!
-*** memcached-incr!
-*** memcached-decr!
+**** connection -> boolean
+Takes a memcached connection, and removes all the keys-value pairs
+stored in it. Returns #t.
+
+*** TODO memcached-incr!
+*** TODO memcached-decr!
+*** TODO description of expiration times
