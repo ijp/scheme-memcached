@@ -178,7 +178,7 @@
   (define value-len (bytevector-length value))
   (define total-len (+ extras-len key-len value-len))
   (define extras (make-bytevector extras-len 0))
-  (bytevector-u16-set! extras 4 expiration (endianness big))
+  (bytevector-u32-set! extras 4 expiration (endianness big))
   (mc-pack out magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0)
   (write-packet-body out extras key value))
 
@@ -270,7 +270,7 @@
   (define extras (make-bytevector extras-len 0))
   (bytevector-u64-set! extras 0 by (endianness big))
   (bytevector-u64-set! extras 8 initial (endianness big))
-  (bytevector-u16-set! extras 16 expiration (endianness big))
+  (bytevector-u32-set! extras 16 expiration (endianness big))
   (mc-pack out magic/request (opcode-byte opcode) key-len extras-len 0 0 total-len 0 0)
   (write-packet-body out extras key #f))
 
