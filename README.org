@@ -8,10 +8,20 @@ daemon. Currently it only supports Guile, more will be added shortly.
 Right now, the library is a little simplistic. It only supports
 communicating with a single Memcached instance, and expects you to
 deal with bytevectors. It also does not currently support CAS values.
+A more Schemey API for expiration values may also be desirable.
+
+But anyway, enough self-deprecation, you probably want the docs.
 
 **  API
 
 Users are expected to import the (memcached) library.
+
+Some commands take an expiration time. This is a 32 bit integer, whose
+meaning depends on its size. If it is less than 60*60*24*30=2592000,
+then it specifies the number of seconds. If it is larger than this, it
+specifies a Unix Time at which to expire. Update commands treat 0
+specially as a "no-expires" value, since there is little point in
+updating something for it to expire immediately.
 
 *** make-memcached-connection
 **** string integer -> connection
@@ -74,4 +84,3 @@ stored in it. Returns #t.
 
 *** TODO memcached-incr!
 *** TODO memcached-decr!
-*** TODO description of expiration times
