@@ -50,7 +50,8 @@ Other libraries like python's memcache.py work this way.
 
 Should raise &assertion violations for bad arguments, since this is
 the way all r6rs procedures work
-* TODO sort out incr! decr!
+* DONE sort out incr! decr!
+  CLOSED: [2013-02-27 水 21:57]
 * DONE add licensing information
   CLOSED: [2013-02-21 木 22:29]
 * TODO add a multi-get

@@ -289,17 +289,14 @@
                            (else
                             (error 'name (response-message status) key))))))))
       (case-lambda
-        ;; TODO: Not entirely convinced by the ordering. Might be more
-        ;; useful to have the "by" and "initial" arguments come before
-        ;; the expiration
         ((mc key)
          (set mc key no-initial 1 0))
-        ((mc key expiration)
-         (set mc key expiration 1 0))
-        ((mc key expiration by)
-         (set mc key expiration by 0))
-        ((mc key expiration by initial)
-         (set mc key expiration by initial))))))
+        ((mc key delta)
+         (set mc key no-initial delta 0))
+        ((mc key delta initial)
+         (set mc key 0 delta initial))
+        ((mc key delta initial expiration)
+         (set mc key expiration delta initial))))))
 
 (define-command/incr memcached-incr! 'Increment)
 (define-command/incr memcached-decr! 'Decrement)
