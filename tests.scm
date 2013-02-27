@@ -97,6 +97,8 @@
           (memcached-set! (current-connection) (s "bar") (s "5"))
           (memcached-set! (current-connection) (s "text") (s "not a number")))
    (teardown (memcached-flush! (current-connection))))
+  (test-not (memcached-incr! (current-connection) (s "baz")))
+  (test-not (memcached-decr! (current-connection) (s "baz")))
   (test-error error? (memcached-incr! (current-connection) (s "text")))
   (test-eqv 11 (memcached-incr! (current-connection) (s "foo")))
   (test-eqv 4 (memcached-decr! (current-connection) (s "bar")))

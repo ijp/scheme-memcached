@@ -283,19 +283,21 @@
                        (o (connection-output-port mc)))
                    (write-incr o opcode key expiration by initial)
                    (let-values (((status cas extra key body) (get-packet i)))
-                     (if (no-error? status)
-                         (bytevector-u64-ref body 0 (endianness big))
-                         (error 'name (response-message status) key)))))))
+                     (cond ((no-error? status)
+                            (bytevector-u64-ref body 0 (endianness big)))
+                           ((key-not-found? status) #f)
+                           (else
+                            (error 'name (response-message status) key))))))))
       (case-lambda
         ;; TODO: Not entirely convinced by the ordering. Might be more
         ;; useful to have the "by" and "initial" arguments come before
         ;; the expiration
         ((mc key)
-         (set mc key 0 1 no-initial))
+         (set mc key no-initial 1 0))
         ((mc key expiration)
-         (set mc key expiration 1 no-initial))
+         (set mc key expiration 1 0))
         ((mc key expiration by)
-         (set mc key expiration by no-initial))
+         (set mc key expiration by 0))
         ((mc key expiration by initial)
          (set mc key expiration by initial))))))
 
