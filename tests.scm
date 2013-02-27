@@ -92,9 +92,20 @@
 (define-test-case* memcached-tests mc:version
   (test-predicate string? (memcached-version (current-connection))))
 
-(define-test-case* memcached-tests mc:incr/decr!
-  ;; TODO:
-  (test-eqv #t #t))
+(define-test-case memcached-tests mc:incr/decr!
+  ((setup (memcached-set! (current-connection) (s "foo") (s "10"))
+          (memcached-set! (current-connection) (s "bar") (s "5"))
+          (memcached-set! (current-connection) (s "text") (s "not a number")))
+   (teardown (memcached-flush! (current-connection))))
+  (test-error error? (memcached-incr! (current-connection) (s "text")))
+  (test-eqv 11 (memcached-incr! (current-connection) (s "foo")))
+  (test-eqv 4 (memcached-decr! (current-connection) (s "bar")))
+  (test-eqv 20 (memcached-incr! (current-connection) (s "foo") 0 10))
+  (test-eqv 0 (memcached-decr! (current-connection) (s "bar") 0 5))
+  (test-eqv 20 (memcached-incr! (current-connection) (s "foo") 0 10 20))
+  (test-eqv 0 (memcached-decr! (current-connection) (s "bar") 0 5 20))
+  (test-eqv 20 (memcached-incr! (current-connection) (s "baz") 0 10 20))
+  (test-eqv 20 (memcached-decr! (current-connection) (s "baz") 0 10 20)))
 
 (parameterize ((current-connection (make-memcached-connection)))
  (run-test memcached-tests))

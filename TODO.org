@@ -32,7 +32,8 @@ conveniences for auto caching, and invalidation
   CLOSED: [2013-02-19 火 21:07]
 * DONE get should return #f if not exists
   CLOSED: [2013-02-19 火 21:07]
-* TODO Add tests for incr!/decr!
+* DONE Add tests for incr!/decr!
+  CLOSED: [2013-02-27 水 21:42]
 * DONE explain expiration times
   CLOSED: [2013-02-26 火 23:39]
 expiration time - 0 = never delete (1-2592000 seconds to keep, 259200
