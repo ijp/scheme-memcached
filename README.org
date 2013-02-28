@@ -82,5 +82,18 @@ version of the memcached server.
 Takes a memcached connection, and removes all the keys-value pairs
 stored in it. Returns #t.
 
-*** TODO memcached-incr!
-*** TODO memcached-decr!
+*** memcached-incr! / memcached-decr!
+**** connection bytevector integer integer integer -> integer or #f
+Takes a memcached connection, a key bytevector, a delta integer, an
+initial value integer, and an expiration time. It returns the value of
+incrementing (or decrementing) the integer value stored at that key by
+the delta amount. If the key does not exist, it is set to the initial
+value integer.
+**** connection bytevector integer integer -> integer or #f
+Similar to above, but defaults to not expiring the key.
+**** connection bytevector integer -> integer or #f
+Similar to above, but if the key is not found it does not set it to a
+value. Instead, if the keys is not found, it returns #f.
+**** connection bytevector -> integer or #f
+Similar to the above, but it defaults to incrementing/decrementing the
+key by 1.
